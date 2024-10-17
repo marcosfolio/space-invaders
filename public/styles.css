@@ -1,0 +1,162 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100vh;
+    margin: 0;
+    background-color: #000;
+    color: #fff;
+    font-family: 'Pixelify Sans', sans-serif;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#scoreDisplay {
+    color: white;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+#gameCanvas {
+    border: 2px solid white;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#restartButton,
+#pauseButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Pixelify Sans", sans-serif;
+}
+
+#restartButton {
+    background-color: #4CAF50;
+}
+
+#pauseButton {
+    background-color: #2196F3;
+    width: 40px;
+    padding: 8px;
+}
+
+#restartButton:hover {
+    background-color: #45a049;
+}
+
+#pauseButton:hover {
+    background-color: #1e87db;
+}
+
+.pause-icon,
+.play-icon {
+    width: 24px;
+    height: 24px;
+}
+
+canvas {
+    border: 2px solid #fff;
+}
+
+.controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    font-family: 'Pixelify Sans', sans-serif;
+    font-size: 16px;
+    padding: 5px 10px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+#score-container {
+    font-size: 20px;
+    margin-left: 20px;
+}
+
+/* Add these styles for the leaderboard header and trophy */
+.leaderboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.trophy {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-color: transparent;
+    position: relative;
+}
+
+.trophy::before,
+.trophy::after {
+    content: '';
+    position: absolute;
+    background-color: #FFD700;
+    /* Yellow color for the trophy */
+}
+
+.trophy::before {
+    width: 16px;
+    height: 16px;
+    top: 0;
+    left: 4px;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 60%,
+            75% 60%, 75% 100%, 25% 100%,
+            25% 60%, 0% 60%);
+}
+
+.trophy::after {
+    width: 12px;
+    height: 4px;
+    bottom: 0;
+    left: 6px;
+}
+
+/* Update the existing #leaderboard styles */
+#leaderboard {
+    margin-left: 20px;
+    margin-top: 38px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #fff;
+    max-width: 300px;
+    color: #fff;
+    font-family: 'Pixelify Sans', sans-serif;
+}
+
+#leaderboard h2 {
+    margin: 0;
+    text-align: center;
+}
+
+#leaderboard p {
+    margin: 5px 0;
+}
