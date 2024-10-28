@@ -42,7 +42,9 @@ const INVADER_COLORS = {
     octopus: '#FFFF00',  // Yellow
     crab: '#00FFFF',     // Cyan
     squid: '#FF69B4',     // Pink (Hot Pink)
-    madusa: '#FF00FF'    // Magenta
+    madusa: '#FF00FF',    // Magenta
+    orange: '#FFA500',   // Orange
+    lightBlue: '#ADD8E6' // Light Blue
 };
 
 // Modify these constants
@@ -143,9 +145,139 @@ const MEDUSA_INVADER_FRAMES = [
 
 const MEDUSA_FRAME_DURATION = 500; // Duration of each frame in milliseconds
 
+// Replace the existing ORANGE_INVADER_MATRIX with this updated version
+const ORANGE_INVADER_FRAMES = [
+    [
+        [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],
+        [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+        [0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0]
+    ],
+    [
+        [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],
+        [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+        [0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0]
+    ]
+];
+
+const ORANGE_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+
+// Replace the existing LIGHT_BLUE_INVADER_MATRIX with this updated version
+const LIGHT_BLUE_INVADER_FRAMES = [
+    [
+        [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0]
+    ],
+    [
+        [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0]
+    ]
+];
+
+const LIGHT_BLUE_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+
+// Add this constant near the top of the file
+const CRAB_INVADER_FRAMES = [
+    [
+        [0, 1, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 0, 1, 1, 1, 0, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 1, 0]
+    ],
+    [
+        [0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 0, 1, 1, 1, 0, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0]
+    ]
+];
+
+const CRAB_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+
+// Add this constant near the top of the file
+const OCTOPUS_INVADER_FRAMES = [
+    [
+        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+        [0, 1, 0, 1, 0, 0, 1, 0, 1, 0]
+    ],
+    [
+        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
+        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+        [1, 0, 1, 0, 0, 0, 0, 1, 0, 1]
+    ]
+];
+
+const OCTOPUS_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+
+// Add this constant near the top of the file
+const SQUID_INVADER_FRAMES = [
+    [
+        [0, 0, 0, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 0, 1, 1, 0, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 1, 1, 0, 1, 0],
+        [1, 0, 0, 0, 0, 0, 0, 1],
+        [0, 1, 0, 0, 0, 0, 1, 0]
+    ],
+    [
+        [0, 0, 0, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 0, 1, 1, 0, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 1, 1, 0, 1, 0],
+        [0, 0, 1, 0, 0, 1, 0, 0],
+        [0, 1, 0, 0, 0, 0, 1, 0]
+    ]
+];
+
+const SQUID_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+
 // Modify the createPixelInvader function
 function createPixelInvader() {
-    const invaderType = Math.floor(Math.random() * 5); // 0-4 for five types of invaders
+    const invaderType = Math.floor(Math.random() * 7); // 0-6 for seven types of invaders
     let pixelMap;
     let color;
     let isAnimated = false;
@@ -165,12 +297,14 @@ function createPixelInvader() {
             color = INVADER_COLORS.classic;
             break;
         case 1:
-            pixelMap = createOctopusInvader();
+            pixelMap = OCTOPUS_INVADER_FRAMES[0];
             color = INVADER_COLORS.octopus;
+            isAnimated = true;
             break;
         case 2:
-            pixelMap = createCrabInvader();
+            pixelMap = CRAB_INVADER_FRAMES[0];
             color = INVADER_COLORS.crab;
+            isAnimated = true;
             break;
         case 3:
             pixelMap = MEDUSA_INVADER_FRAMES[0];
@@ -178,17 +312,19 @@ function createPixelInvader() {
             isAnimated = true;
             break;
         case 4:
-            pixelMap = [
-                [0, 0, 0, 1, 1, 0, 0, 0],
-                [0, 0, 1, 1, 1, 1, 0, 0],
-                [0, 1, 1, 1, 1, 1, 1, 0],
-                [1, 1, 0, 1, 1, 0, 1, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [0, 1, 0, 1, 1, 0, 1, 0],
-                [1, 0, 0, 0, 0, 0, 0, 1],
-                [0, 1, 0, 0, 0, 0, 1, 0]
-            ];
+            pixelMap = SQUID_INVADER_FRAMES[0];
             color = INVADER_COLORS.squid;
+            isAnimated = true;
+            break;
+        case 5:
+            pixelMap = ORANGE_INVADER_FRAMES[0];
+            color = INVADER_COLORS.orange;
+            isAnimated = true;
+            break;
+        case 6:
+            pixelMap = LIGHT_BLUE_INVADER_FRAMES[0];
+            color = INVADER_COLORS.lightBlue;
+            isAnimated = true;
             break;
     }
 
@@ -323,10 +459,51 @@ function drawEnemies() {
         if (enemy.isAnimated) {
             // Update the frame if it's time
             const currentTime = Date.now();
-            if (currentTime - enemy.lastFrameUpdate > MEDUSA_FRAME_DURATION) {
-                enemy.currentFrame = (enemy.currentFrame + 1) % MEDUSA_INVADER_FRAMES.length;
+            let frameDuration;
+            switch (enemy.color) {
+                case INVADER_COLORS.madusa:
+                    frameDuration = MEDUSA_FRAME_DURATION;
+                    break;
+                case INVADER_COLORS.orange:
+                    frameDuration = ORANGE_FRAME_DURATION;
+                    break;
+                case INVADER_COLORS.lightBlue:
+                    frameDuration = LIGHT_BLUE_FRAME_DURATION;
+                    break;
+                case INVADER_COLORS.crab:
+                    frameDuration = CRAB_FRAME_DURATION;
+                    break;
+                case INVADER_COLORS.octopus:
+                    frameDuration = OCTOPUS_FRAME_DURATION;
+                    break;
+                case INVADER_COLORS.squid:
+                    frameDuration = SQUID_FRAME_DURATION;
+                    break;
+                default:
+                    frameDuration = 500; // Default frame duration
+            }
+
+            if (currentTime - enemy.lastFrameUpdate > frameDuration) {
+                if (enemy.color === INVADER_COLORS.madusa) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % MEDUSA_INVADER_FRAMES.length;
+                    enemy.pixelMap = MEDUSA_INVADER_FRAMES[enemy.currentFrame];
+                } else if (enemy.color === INVADER_COLORS.orange) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % ORANGE_INVADER_FRAMES.length;
+                    enemy.pixelMap = ORANGE_INVADER_FRAMES[enemy.currentFrame];
+                } else if (enemy.color === INVADER_COLORS.lightBlue) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % LIGHT_BLUE_INVADER_FRAMES.length;
+                    enemy.pixelMap = LIGHT_BLUE_INVADER_FRAMES[enemy.currentFrame];
+                } else if (enemy.color === INVADER_COLORS.crab) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % CRAB_INVADER_FRAMES.length;
+                    enemy.pixelMap = CRAB_INVADER_FRAMES[enemy.currentFrame];
+                } else if (enemy.color === INVADER_COLORS.octopus) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % OCTOPUS_INVADER_FRAMES.length;
+                    enemy.pixelMap = OCTOPUS_INVADER_FRAMES[enemy.currentFrame];
+                } else if (enemy.color === INVADER_COLORS.squid) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % SQUID_INVADER_FRAMES.length;
+                    enemy.pixelMap = SQUID_INVADER_FRAMES[enemy.currentFrame];
+                }
                 enemy.lastFrameUpdate = currentTime;
-                enemy.pixelMap = MEDUSA_INVADER_FRAMES[enemy.currentFrame];
             }
         }
 
@@ -1015,36 +1192,7 @@ canvas.addEventListener('mousemove', (event) => {
     mouseY = event.clientY - rect.top;
 });
 
-// Update the createOctopusInvader createCrabInvader and createMadusaInvader functions
-function createOctopusInvader() {
-    return [
-        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
-        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
-        [0, 1, 0, 1, 0, 0, 1, 0, 1, 0]
-    ];
-}
-
-function createCrabInvader() {
-    return [
-        [0, 1, 0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 1, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 0]
-    ];
-}
-
-// Remove the createMadusaInvader function as it's no longer needed
-
-// Add these event listeners at the end of the file
+// Add this event listener at the end of the file
 document.addEventListener('click', handleUserInteraction);
 document.addEventListener('keydown', handleUserInteraction);
 
