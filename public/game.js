@@ -120,7 +120,7 @@ function addHighScore(name, score) {
 }
 
 // Add this constant near the top of the file
-const MEDUSA_INVADER_FRAMES = [
+const MADUSA_INVADER_FRAMES = [
     [
         [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
         [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
@@ -143,7 +143,7 @@ const MEDUSA_INVADER_FRAMES = [
     ]
 ];
 
-const MEDUSA_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+const MADUSA_FRAME_DURATION = 500; // Duration of each frame in milliseconds
 
 // Replace the existing ORANGE_INVADER_MATRIX with this updated version
 const ORANGE_INVADER_FRAMES = [
@@ -307,7 +307,7 @@ function createPixelInvader() {
             isAnimated = true;
             break;
         case 3:
-            pixelMap = MEDUSA_INVADER_FRAMES[0];
+            pixelMap = MADUSA_INVADER_FRAMES[0];
             color = INVADER_COLORS.madusa;
             isAnimated = true;
             break;
@@ -462,7 +462,7 @@ function drawEnemies() {
             let frameDuration;
             switch (enemy.color) {
                 case INVADER_COLORS.madusa:
-                    frameDuration = MEDUSA_FRAME_DURATION;
+                    frameDuration = MADUSA_FRAME_DURATION;
                     break;
                 case INVADER_COLORS.orange:
                     frameDuration = ORANGE_FRAME_DURATION;
@@ -485,8 +485,8 @@ function drawEnemies() {
 
             if (currentTime - enemy.lastFrameUpdate > frameDuration) {
                 if (enemy.color === INVADER_COLORS.madusa) {
-                    enemy.currentFrame = (enemy.currentFrame + 1) % MEDUSA_INVADER_FRAMES.length;
-                    enemy.pixelMap = MEDUSA_INVADER_FRAMES[enemy.currentFrame];
+                    enemy.currentFrame = (enemy.currentFrame + 1) % MADUSA_INVADER_FRAMES.length;
+                    enemy.pixelMap = MADUSA_INVADER_FRAMES[enemy.currentFrame];
                 } else if (enemy.color === INVADER_COLORS.orange) {
                     enemy.currentFrame = (enemy.currentFrame + 1) % ORANGE_INVADER_FRAMES.length;
                     enemy.pixelMap = ORANGE_INVADER_FRAMES[enemy.currentFrame];
