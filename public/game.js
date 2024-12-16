@@ -44,7 +44,8 @@ const INVADER_COLORS = {
     squid: '#FF69B4',     // Pink (Hot Pink)
     madusa: '#FF00FF',    // Magenta
     orange: '#FFA500',   // Orange
-    lightBlue: '#ADD8E6' // Light Blue
+    lightBlue: '#ADD8E6', // Light Blue
+    gerion: '#FFFFFF' // Gerion
 };
 
 // Modify these constants
@@ -224,6 +225,38 @@ const CRAB_INVADER_FRAMES = [
 const CRAB_FRAME_DURATION = 500; // Duration of each frame in milliseconds
 
 // Add this constant near the top of the file
+const GERION_INVADER_FRAMES = [
+    [
+        [0, 0, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 1, 1, 0, 1, 1, 0],
+        [0, 1, 1, 0, 1, 1, 1, 1, 0],
+        [0, 0, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 1, 1, 0, 1, 1, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 0, 1, 1, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 1, 0]
+    ],
+    [
+        [0, 0, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 1, 1, 0, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 0, 1, 1, 0],
+        [0, 0, 0, 0, 1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 1, 1, 0, 1, 1, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 0, 1, 1, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 1, 0]
+    ],
+];
+
+const GERION_FRAME_DURATION = 500; // Duration of each frame in milliseconds
+
+// Add this constant near the top of the file
 const OCTOPUS_INVADER_FRAMES = [
     [
         [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
@@ -284,17 +317,9 @@ function createPixelInvader() {
 
     switch (invaderType) {
         case 0:
-            pixelMap = [
-                [0, 0, 1, 0, 0, 1, 0, 0],
-                [0, 0, 0, 1, 1, 0, 0, 0],
-                [0, 0, 1, 1, 1, 1, 0, 0],
-                [0, 1, 0, 1, 1, 0, 1, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 1, 1, 1, 0, 1],
-                [1, 0, 1, 0, 0, 1, 0, 1],
-                [0, 0, 0, 1, 1, 0, 0, 0]
-            ];
-            color = INVADER_COLORS.classic;
+            pixelMap = GERION_INVADER_FRAMES[0];
+            color = INVADER_COLORS.gerion;
+            isAnimated = true;
             break;
         case 1:
             pixelMap = OCTOPUS_INVADER_FRAMES[0];
@@ -325,6 +350,19 @@ function createPixelInvader() {
             pixelMap = LIGHT_BLUE_INVADER_FRAMES[0];
             color = INVADER_COLORS.lightBlue;
             isAnimated = true;
+            break;
+        case 7:
+            pixelMap = [
+                [0, 0, 1, 0, 0, 1, 0, 0],
+                [0, 0, 0, 1, 1, 0, 0, 0],
+                [0, 0, 1, 1, 1, 1, 0, 0],
+                [0, 1, 0, 1, 1, 0, 1, 0],
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 1, 1, 1, 1, 0, 1],
+                [1, 0, 1, 0, 0, 1, 0, 1],
+                [0, 0, 0, 1, 1, 0, 0, 0]
+            ];
+            color = INVADER_COLORS.classic;
             break;
     }
 
@@ -470,6 +508,9 @@ function drawEnemies() {
                 case INVADER_COLORS.lightBlue:
                     frameDuration = LIGHT_BLUE_FRAME_DURATION;
                     break;
+                case INVADER_COLORS.gerion:
+                    frameDuration = GERION_FRAME_DURATION;
+                    break;
                 case INVADER_COLORS.crab:
                     frameDuration = CRAB_FRAME_DURATION;
                     break;
@@ -493,6 +534,10 @@ function drawEnemies() {
                 } else if (enemy.color === INVADER_COLORS.lightBlue) {
                     enemy.currentFrame = (enemy.currentFrame + 1) % LIGHT_BLUE_INVADER_FRAMES.length;
                     enemy.pixelMap = LIGHT_BLUE_INVADER_FRAMES[enemy.currentFrame];
+                }
+                else if (enemy.color === INVADER_COLORS.gerion) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % GERION_INVADER_FRAMES.length;
+                    enemy.pixelMap = GERION_INVADER_FRAMES[enemy.currentFrame];
                 } else if (enemy.color === INVADER_COLORS.crab) {
                     enemy.currentFrame = (enemy.currentFrame + 1) % CRAB_INVADER_FRAMES.length;
                     enemy.pixelMap = CRAB_INVADER_FRAMES[enemy.currentFrame];
