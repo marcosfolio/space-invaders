@@ -1,3 +1,17 @@
+import { GERION_INVADER_FRAMES } from './invaders/gerion.js';
+import { OCTOPUS_INVADER_FRAMES } from './invaders/octopus.js';
+import { MADUSA_INVADER_FRAMES } from './invaders/madusa.js';
+import { ORANGE_INVADER_FRAMES } from './invaders/orange.js';
+import { LIGHT_BLUE_INVADER_FRAMES } from './invaders/light_blue.js';
+import { CRAB_INVADER_FRAMES } from './invaders/crab.js';
+import { SQUID_INVADER_FRAMES } from './invaders/squid.js';
+import { UGLY_INVADER_FRAMES } from './invaders/ugly.js';
+import { FRAME_DURATIONS } from './invaders/frameDurations.js';
+import { Leaderboard } from './components/Leaderboard.js';
+import { PixelInvaderFactory, INVADER_COLORS } from './components/PixelInvaderFactory.js';
+import { Ship } from './components/Ship.js';
+import { BulletManager } from './components/BulletManager.js';
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -9,18 +23,10 @@ canvas.height = GAME_HEIGHT;
 const laserSound = document.getElementById('laserSound');
 const explosionSound = document.getElementById('explosionSound');
 
-const SHIP_COLOR = '#00FFFF'; // Cyan color for the ship
+// Create instances of the new components
+const ship = new Ship(GAME_WIDTH, GAME_HEIGHT);
+const bulletManager = new BulletManager();
 
-let player = {
-    x: GAME_WIDTH / 2,
-    y: GAME_HEIGHT - 40,
-    width: 48,
-    height: 32,
-    speed: 5,
-    velocity: 0
-};
-
-let bullets = [];
 let enemies = [];
 let gameOver = false;
 let ENEMY_SPEED = 0.2; // Initial speed of enemy movement
@@ -36,18 +42,6 @@ let score = 0;
 const STAR_COUNT = 100;
 let stars = [];
 
-// Replace the INVADER_COLORS constant with this updated version
-const INVADER_COLORS = {
-    classic: '#4CAF50',  // Forest green
-    octopus: '#FFFF00',  // Yellow
-    crab: '#00FFFF',     // Cyan
-    squid: '#FF69B4',     // Pink (Hot Pink)
-    madusa: '#FF00FF',    // Magenta
-    orange: '#FFA500',   // Orange
-    lightBlue: '#ADD8E6', // Light Blue
-    gerion: '#FFFFFF' // Gerion
-};
-
 // Modify these constants
 const FIRST_BIG_ENEMY_THRESHOLD = 50;
 const SECOND_BIG_ENEMY_THRESHOLD = 100;
@@ -62,10 +56,6 @@ const BIG_ENEMY_SHOOT_INTERVAL = 2000; // 2 seconds
 let enemyBullets = [];
 
 // Add these constants at the top of the file
-const MAX_LEADERBOARD_ENTRIES = 10;
-let leaderboard = [];
-
-// Add these constants near the top of the file
 const SNAKE_ENEMY_THRESHOLD = 60;
 const SNAKE_ENEMY_SIZE = 40; // Reduced size for each segment
 const SNAKE_ENEMY_HEALTH = 30;
@@ -84,290 +74,8 @@ let highScorePromptShown = false;
 let showNameInput = false;
 let playerNameInput = '';
 
-// Add these functions for leaderboard management
-function loadLeaderboard() {
-    const storedLeaderboard = localStorage.getItem('spaceInvadersLeaderboard');
-    if (storedLeaderboard) {
-        leaderboard = JSON.parse(storedLeaderboard);
-    }
-}
-
-function saveLeaderboard() {
-    localStorage.setItem('spaceInvadersLeaderboard', JSON.stringify(leaderboard));
-}
-
-// Modify the updateLeaderboardDisplay function
-function updateLeaderboardDisplay() {
-    const leaderboardElement = document.getElementById('leaderboard');
-    leaderboardElement.innerHTML = `
-        <div class="leaderboard-header">
-            <div class="trophy"></div>
-            <h2>Top 10 Scores</h2>
-        </div>
-    `;
-    leaderboard.forEach((entry, index) => {
-        leaderboardElement.innerHTML += `<p>${index + 1}. ${entry.name}: ${entry.score}</p>`;
-    });
-}
-
-function addHighScore(name, score) {
-    leaderboard.push({ name, score });
-    leaderboard.sort((a, b) => b.score - a.score);
-    if (leaderboard.length > MAX_LEADERBOARD_ENTRIES) {
-        leaderboard.pop();
-    }
-    saveLeaderboard();
-    updateLeaderboardDisplay();
-}
-
-// Add this constant near the top of the file
-const MADUSA_INVADER_FRAMES = [
-    [
-        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0],
-        [0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0]
-    ],
-    [
-        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0],
-        [0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0]
-    ]
-];
-
-const MADUSA_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Replace the existing ORANGE_INVADER_MATRIX with this updated version
-const ORANGE_INVADER_FRAMES = [
-    [
-        [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],
-        [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
-        [0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0]
-    ],
-    [
-        [0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],
-        [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
-        [0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0]
-    ]
-];
-
-const ORANGE_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Replace the existing LIGHT_BLUE_INVADER_MATRIX with this updated version
-const LIGHT_BLUE_INVADER_FRAMES = [
-    [
-        [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0]
-    ],
-    [
-        [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0]
-    ]
-];
-
-const LIGHT_BLUE_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Add this constant near the top of the file
-const CRAB_INVADER_FRAMES = [
-    [
-        [0, 1, 0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 1, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 0]
-    ],
-    [
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 1, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0, 0]
-    ]
-];
-
-const CRAB_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Add this constant near the top of the file
-const GERION_INVADER_FRAMES = [
-    [
-        [0, 0, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 1, 0, 1, 1, 0],
-        [0, 1, 1, 0, 1, 1, 1, 1, 0],
-        [0, 0, 1, 1, 1, 0, 0, 0, 0],
-        [0, 0, 1, 1, 1, 0, 0, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 1, 1, 0, 1, 1, 0, 0],
-        [0, 0, 0, 0, 1, 0, 0, 0, 0],
-        [0, 0, 1, 1, 0, 1, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 0]
-    ],
-    [
-        [0, 0, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 1, 1, 0, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 0, 1, 1, 0],
-        [0, 0, 0, 0, 1, 1, 1, 0, 0],
-        [0, 0, 0, 0, 1, 1, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 0],
-        [0, 0, 1, 1, 0, 1, 1, 0, 0],
-        [0, 0, 0, 0, 1, 0, 0, 0, 0],
-        [0, 0, 1, 1, 0, 1, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 0, 1, 0]
-    ],
-];
-
-const GERION_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Add this constant near the top of the file
-const OCTOPUS_INVADER_FRAMES = [
-    [
-        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
-        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
-        [0, 1, 0, 1, 0, 0, 1, 0, 1, 0]
-    ],
-    [
-        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 0, 1, 1, 1, 1, 0, 1, 0],
-        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-        [1, 0, 1, 0, 0, 0, 0, 1, 0, 1]
-    ]
-];
-
-const OCTOPUS_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Add this constant near the top of the file
-const SQUID_INVADER_FRAMES = [
-    [
-        [0, 0, 0, 1, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 0, 1, 1, 0, 1, 0],
-        [1, 0, 0, 0, 0, 0, 0, 1],
-        [0, 1, 0, 0, 0, 0, 1, 0]
-    ],
-    [
-        [0, 0, 0, 1, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 1, 0, 1, 1, 0, 1, 0],
-        [0, 0, 1, 0, 0, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 1, 0]
-    ]
-];
-
-const SQUID_FRAME_DURATION = 500; // Duration of each frame in milliseconds
-
-// Modify the createPixelInvader function
-function createPixelInvader() {
-    const invaderType = Math.floor(Math.random() * 7); // 0-6 for seven types of invaders
-    let pixelMap;
-    let color;
-    let isAnimated = false;
-
-    switch (invaderType) {
-        case 0:
-            pixelMap = GERION_INVADER_FRAMES[0];
-            color = INVADER_COLORS.gerion;
-            isAnimated = true;
-            break;
-        case 1:
-            pixelMap = OCTOPUS_INVADER_FRAMES[0];
-            color = INVADER_COLORS.octopus;
-            isAnimated = true;
-            break;
-        case 2:
-            pixelMap = CRAB_INVADER_FRAMES[0];
-            color = INVADER_COLORS.crab;
-            isAnimated = true;
-            break;
-        case 3:
-            pixelMap = MADUSA_INVADER_FRAMES[0];
-            color = INVADER_COLORS.madusa;
-            isAnimated = true;
-            break;
-        case 4:
-            pixelMap = SQUID_INVADER_FRAMES[0];
-            color = INVADER_COLORS.squid;
-            isAnimated = true;
-            break;
-        case 5:
-            pixelMap = ORANGE_INVADER_FRAMES[0];
-            color = INVADER_COLORS.orange;
-            isAnimated = true;
-            break;
-        case 6:
-            pixelMap = LIGHT_BLUE_INVADER_FRAMES[0];
-            color = INVADER_COLORS.lightBlue;
-            isAnimated = true;
-            break;
-        case 7:
-            pixelMap = [
-                [0, 0, 1, 0, 0, 1, 0, 0],
-                [0, 0, 0, 1, 1, 0, 0, 0],
-                [0, 0, 1, 1, 1, 1, 0, 0],
-                [0, 1, 0, 1, 1, 0, 1, 0],
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 1, 1, 1, 1, 0, 1],
-                [1, 0, 1, 0, 0, 1, 0, 1],
-                [0, 0, 0, 1, 1, 0, 0, 0]
-            ];
-            color = INVADER_COLORS.classic;
-            break;
-    }
-
-    return { pixelMap, color, isAnimated };
-}
+// Add this near the top with other initializations
+const leaderboard = new Leaderboard();
 
 // Modify the createEnemy function
 function createEnemy(isBig = false, count = 1) {
@@ -432,16 +140,16 @@ function createEnemy(isBig = false, count = 1) {
             }
         } while (overlapping);
 
-        const { pixelMap, color, isAnimated } = createPixelInvader();
+        const invader = PixelInvaderFactory.create();
 
         enemies.push({
             x: x,
             y: -enemyHeight,
             width: enemyWidth,
             height: enemyHeight,
-            color: color,
-            pixelMap: pixelMap,
-            isAnimated: isAnimated,
+            color: invader.color,
+            pixelMap: invader.pixelMap,
+            isAnimated: invader.isAnimated,
             currentFrame: 0,
             lastFrameUpdate: Date.now()
         });
@@ -467,14 +175,14 @@ function createShipPixelMap() {
 const shipPixelMap = createShipPixelMap();
 
 function drawPlayer() {
-    const pixelSize = player.width / shipPixelMap[0].length;
+    const pixelSize = ship.width / shipPixelMap[0].length;
     shipPixelMap.forEach((row, i) => {
         row.forEach((pixel, j) => {
             if (pixel) {
-                ctx.fillStyle = SHIP_COLOR;
+                ctx.fillStyle = ship.color;
                 ctx.fillRect(
-                    player.x + j * pixelSize,
-                    player.y + i * pixelSize,
+                    ship.x + j * pixelSize,
+                    ship.y + i * pixelSize,
                     pixelSize,
                     pixelSize
                 );
@@ -484,10 +192,7 @@ function drawPlayer() {
 }
 
 function drawBullets() {
-    ctx.fillStyle = 'yellow';
-    bullets.forEach(bullet => {
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-    });
+    bulletManager.draw(ctx);
 }
 
 function drawEnemies() {
@@ -500,25 +205,28 @@ function drawEnemies() {
             let frameDuration;
             switch (enemy.color) {
                 case INVADER_COLORS.madusa:
-                    frameDuration = MADUSA_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.MADUSA;
                     break;
                 case INVADER_COLORS.orange:
-                    frameDuration = ORANGE_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.ORANGE;
                     break;
                 case INVADER_COLORS.lightBlue:
-                    frameDuration = LIGHT_BLUE_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.LIGHT_BLUE;
                     break;
                 case INVADER_COLORS.gerion:
-                    frameDuration = GERION_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.GERION;
                     break;
                 case INVADER_COLORS.crab:
-                    frameDuration = CRAB_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.CRAB;
                     break;
                 case INVADER_COLORS.octopus:
-                    frameDuration = OCTOPUS_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.OCTOPUS;
                     break;
                 case INVADER_COLORS.squid:
-                    frameDuration = SQUID_FRAME_DURATION;
+                    frameDuration = FRAME_DURATIONS.SQUID;
+                    break;
+                case INVADER_COLORS.ugly:
+                    frameDuration = FRAME_DURATIONS.UGLY;
                     break;
                 default:
                     frameDuration = 500; // Default frame duration
@@ -538,6 +246,9 @@ function drawEnemies() {
                 else if (enemy.color === INVADER_COLORS.gerion) {
                     enemy.currentFrame = (enemy.currentFrame + 1) % GERION_INVADER_FRAMES.length;
                     enemy.pixelMap = GERION_INVADER_FRAMES[enemy.currentFrame];
+                } else if (enemy.color === INVADER_COLORS.ugly) {
+                    enemy.currentFrame = (enemy.currentFrame + 1) % UGLY_INVADER_FRAMES.length;
+                    enemy.pixelMap = UGLY_INVADER_FRAMES[enemy.currentFrame];
                 } else if (enemy.color === INVADER_COLORS.crab) {
                     enemy.currentFrame = (enemy.currentFrame + 1) % CRAB_INVADER_FRAMES.length;
                     enemy.pixelMap = CRAB_INVADER_FRAMES[enemy.currentFrame];
@@ -606,10 +317,7 @@ function drawEnemies() {
 }
 
 function moveBullets() {
-    bullets.forEach(bullet => {
-        bullet.y -= 5;
-    });
-    bullets = bullets.filter(bullet => bullet.y > 0);
+    bulletManager.update();
 }
 
 function moveEnemies() {
@@ -617,7 +325,7 @@ function moveEnemies() {
         enemy.y += ENEMY_SPEED;
 
         // Check if enemy has reached the player's ship
-        if (enemy.y + enemy.height >= player.y) {
+        if (enemy.y + enemy.height >= ship.y) {
             gameOver = true;
         }
     });
@@ -627,7 +335,7 @@ function moveEnemies() {
     bigEnemies.forEach(bigEnemy => {
         bigEnemy.y += ENEMY_SPEED * 0.5; // Move slower than regular enemies
 
-        if (bigEnemy.y + bigEnemy.height >= player.y) {
+        if (bigEnemy.y + bigEnemy.height >= ship.y) {
             gameOver = true;
         }
 
@@ -708,6 +416,7 @@ function updateExplosions() {
 
 // Modify the checkCollisions function
 function checkCollisions() {
+    const bullets = bulletManager.getBullets();
     bullets.forEach((bullet, bulletIndex) => {
         enemies.forEach((enemy, enemyIndex) => {
             if (
@@ -765,10 +474,10 @@ function checkCollisions() {
     // Check collision between enemy bullets and player
     enemyBullets.forEach((bullet, index) => {
         if (
-            bullet.x < player.x + player.width &&
-            bullet.x + bullet.width > player.x &&
-            bullet.y < player.y + player.height &&
-            bullet.y + bullet.height > player.y
+            bullet.x < ship.x + ship.width &&
+            bullet.x + bullet.width > ship.x &&
+            bullet.y < ship.y + ship.height &&
+            bullet.y + bullet.height > ship.y
         ) {
             gameOver = true;
             enemyBullets.splice(index, 1);
@@ -812,10 +521,10 @@ function checkCollisions() {
         // Check if snake enemy collides with player
         snakeEnemy.forEach(segment => {
             if (
-                player.x < segment.x + segment.width &&
-                player.x + player.width > segment.x &&
-                player.y < segment.y + segment.height &&
-                player.y + player.height > segment.y
+                ship.x < segment.x + segment.width &&
+                ship.x + ship.width > segment.x &&
+                ship.y < segment.y + segment.height &&
+                ship.y + ship.height > segment.y
             ) {
                 gameOver = true;
             }
@@ -829,13 +538,7 @@ function checkCollisions() {
 }
 
 function updatePlayer() {
-    player.x += player.velocity;
-
-    if (player.x < 0) {
-        player.x = 0;
-    } else if (player.x + player.width > GAME_WIDTH) {
-        player.x = GAME_WIDTH - player.width;
-    }
+    ship.update();
 }
 
 function increaseEnemySpeed() {
@@ -936,9 +639,9 @@ function togglePause() {
 function restartGame() {
     cancelAnimationFrame(animationId);
     clearInterval(shipBlinkInterval);
-    player.x = GAME_WIDTH / 2;
-    player.velocity = 0;
-    bullets = [];
+    ship.x = GAME_WIDTH / 2;
+    ship.velocity = 0;
+    bulletManager.clearBullets();
     enemies = [];
     gameOver = false;
     isPaused = false;
@@ -988,7 +691,7 @@ function gameLoop() {
             }, 200); // Blink every 200ms
 
             // Check if the score is a high score and show input field
-            if (!highScorePromptShown && (leaderboard.length < MAX_LEADERBOARD_ENTRIES || score > leaderboard[leaderboard.length - 1].score)) {
+            if (!highScorePromptShown && leaderboard.isHighScore(score)) {
                 highScorePromptShown = true;
                 showNameInput = true;
             }
@@ -1085,14 +788,7 @@ function gameLoop() {
 // Modify the shoot function
 function shoot() {
     if (!gameOver) {  // Only shoot and play sound if the game is not over
-        bullets.push({
-            x: player.x + player.width / 2 - 2,
-            y: player.y,
-            width: 4,
-            height: 10
-        });
-        laserSound.currentTime = 0;
-        laserSound.play();
+        bulletManager.createBullet(ship);
     }
 }
 
@@ -1102,21 +798,23 @@ function updateScoreDisplay() {
 
 // Modify the keydown event listener
 document.addEventListener('keydown', (e) => {
-    if (!gameOver) {  // Only respond to movement keys if the game is not over
+    if (!gameOver) {
         if (e.key === 'z') {
-            player.velocity = -player.speed;
+            ship.moveLeft();
         } else if (e.key === 'x') {
-            player.velocity = player.speed;
+            ship.moveRight();
         }
     }
     if (e.key === 'm') {
-        shoot();  // We'll keep this here, but the shoot function will handle the game over state
+        if (!gameOver) {
+            shoot();
+        }
     }
 });
 
 document.addEventListener('keyup', (e) => {
     if (e.key === 'z' || e.key === 'x') {
-        player.velocity = 0;
+        ship.stop();
     }
 });
 
@@ -1125,7 +823,7 @@ function handleNameInput(event) {
     if (showNameInput) {
         if (event.key === 'Enter') {
             if (playerNameInput.trim() !== '') {
-                addHighScore(playerNameInput.trim(), score);
+                leaderboard.addHighScore(playerNameInput.trim(), score);
                 showNameInput = false;
             }
         } else if (event.key === 'Backspace') {
@@ -1156,7 +854,7 @@ function handleCanvasClick(event) {
             clickY <= textY + textHeight / 2
         ) {
             if (showNameInput && playerNameInput.trim() !== '') {
-                addHighScore(playerNameInput.trim(), score);
+                leaderboard.addHighScore(playerNameInput.trim(), score);
             }
             restartGame();
         }
@@ -1193,8 +891,7 @@ function createBigEnemyPixelMap() {
 }
 
 // Add this to the end of the file
-loadLeaderboard();
-updateLeaderboardDisplay();
+leaderboard.updateDisplay();
 
 // Add this function to create the snake enemy pixel map
 function createSnakeEnemyPixelMap() {
