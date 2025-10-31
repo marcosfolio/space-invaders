@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'Fight';
+    src: url('fonts/fight.otf') format('woff2'),
+        url('fonts/Fight.woff') format('woff'),
+        url('fonts/fight.otf') format('otf');
+}
+
 body {
     display: flex;
     justify-content: center;
@@ -7,6 +14,23 @@ body {
     background-color: #000;
     color: #fff;
     font-family: 'Pixelify Sans', sans-serif;
+}
+
+.title {
+    --_offset: .1ex;
+    font-family: Fight, Fight Fallback;
+    text-transform: lowercase;
+    font-weight: 400;
+    line-height: .75;
+    text-shadow: 0 var(--_offset) 0 lime, 0 calc(var(--_offset)* 2) 0 light-dark(#999, #000);
+    text-align: center;
+    margin: 1rem 0;
+    height: max-content;
+    font-size: 8rem;
+}
+
+.content {
+    display: flex;
 }
 
 .game-container {
@@ -150,6 +174,7 @@ button:hover {
     max-width: 300px;
     color: #fff;
     font-family: 'Pixelify Sans', sans-serif;
+    max-height: max-content;
 }
 
 #leaderboard h2 {

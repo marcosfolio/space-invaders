@@ -6,5 +6,6 @@ export const FRAME_DURATIONS = {
     GERION: 500,
     OCTOPUS: 500,
     SQUID: 500,
-    UGLY: 500
+    UGLY: 500,
+    FINAL_BOSS_ONE: 500
 }; 

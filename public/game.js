@@ -7,6 +7,7 @@ import { CRAB_INVADER_FRAMES } from './invaders/crab.js';
 import { SQUID_INVADER_FRAMES } from './invaders/squid.js';
 import { UGLY_INVADER_FRAMES } from './invaders/ugly.js';
 import { FRAME_DURATIONS } from './invaders/frameDurations.js';
+import { FINAL_BOSS_ONE_FRAMES } from './invaders/final-boss-one.js';
 import { Leaderboard } from './components/Leaderboard.js';
 import { PixelInvaderFactory, INVADER_COLORS } from './components/PixelInvaderFactory.js';
 import { Ship } from './components/Ship.js';
@@ -55,17 +56,7 @@ const BIG_ENEMY_SHOOT_INTERVAL = 2000; // 2 seconds
 
 let enemyBullets = [];
 
-// Add these constants at the top of the file
-const SNAKE_ENEMY_THRESHOLD = 60;
-const SNAKE_ENEMY_SIZE = 40; // Reduced size for each segment
-const SNAKE_ENEMY_HEALTH = 30;
-const SNAKE_ENEMY_SPEED = 1;
-const SNAKE_ENEMY_AMPLITUDE = 100;
-const SNAKE_ENEMY_FREQUENCY = 0.02;
-const SNAKE_ENEMY_LENGTH = 10; // Number of segments in the snake
-
-// Add this to your existing variables
-let snakeEnemy = null;
+// Snake enemy removed
 
 // Add these variables near the top of the file, with the other game state variables
 let highScorePromptShown = false;
@@ -109,8 +100,11 @@ function createEnemy(isBig = false, count = 1) {
                 width: BIG_ENEMY_SIZE,
                 height: BIG_ENEMY_SIZE,
                 health: BIG_ENEMY_HEALTH,
-                color: '#FF00FF', // Magenta color for big enemy
-                pixelMap: createBigEnemyPixelMap(),
+                color: '#FF00FF', // Magenta color for final boss one
+                pixelMap: FINAL_BOSS_ONE_FRAMES[0],
+                isAnimated: true,
+                currentFrame: 0,
+                lastFrameUpdate: Date.now(),
                 lastShootTime: Date.now()
             });
         }
@@ -156,40 +150,7 @@ function createEnemy(isBig = false, count = 1) {
     }
 }
 
-function createShipPixelMap() {
-    return [
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0],
-        [0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0],
-        [0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0],
-        [0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0],
-    ];
-}
-
-const shipPixelMap = createShipPixelMap();
-
-function drawPlayer() {
-    const pixelSize = ship.width / shipPixelMap[0].length;
-    shipPixelMap.forEach((row, i) => {
-        row.forEach((pixel, j) => {
-            if (pixel) {
-                ctx.fillStyle = ship.color;
-                ctx.fillRect(
-                    ship.x + j * pixelSize,
-                    ship.y + i * pixelSize,
-                    pixelSize,
-                    pixelSize
-                );
-            }
-        });
-    });
-}
+// Ship drawing is now handled by ship.draw(ctx) method from Ship.js component
 
 function drawBullets() {
     bulletManager.draw(ctx);
@@ -280,6 +241,19 @@ function drawEnemies() {
 
     bigEnemies.forEach(bigEnemy => {
         const pixelSize = bigEnemy.width / bigEnemy.pixelMap[0].length;
+
+        // Update animation frame if needed
+        if (bigEnemy.isAnimated) {
+            const currentTime = Date.now();
+            const frameDuration = FRAME_DURATIONS.FINAL_BOSS_ONE;
+
+            if (currentTime - bigEnemy.lastFrameUpdate > frameDuration) {
+                bigEnemy.currentFrame = (bigEnemy.currentFrame + 1) % FINAL_BOSS_ONE_FRAMES.length;
+                bigEnemy.pixelMap = FINAL_BOSS_ONE_FRAMES[bigEnemy.currentFrame];
+                bigEnemy.lastFrameUpdate = currentTime;
+            }
+        }
+
         bigEnemy.pixelMap.forEach((row, i) => {
             row.forEach((pixel, j) => {
                 if (pixel) {
@@ -295,25 +269,7 @@ function drawEnemies() {
         });
     });
 
-    // Draw snake enemy
-    if (snakeEnemy) {
-        snakeEnemy.forEach(segment => {
-            const pixelSize = segment.width / segment.pixelMap[0].length;
-            segment.pixelMap.forEach((row, i) => {
-                row.forEach((pixel, j) => {
-                    if (pixel) {
-                        ctx.fillStyle = segment.color;
-                        ctx.fillRect(
-                            segment.x + j * pixelSize,
-                            segment.y + i * pixelSize,
-                            pixelSize,
-                            pixelSize
-                        );
-                    }
-                });
-            });
-        });
-    }
+    // Snake enemy removed
 }
 
 function moveBullets() {
@@ -352,27 +308,7 @@ function moveEnemies() {
         }
     });
 
-    // Move snake enemy
-    if (snakeEnemy) {
-        snakeEnemy[0].time += SNAKE_ENEMY_FREQUENCY;
-        const headX = GAME_WIDTH / 2 + Math.sin(snakeEnemy[0].time) * SNAKE_ENEMY_AMPLITUDE;
-        const headY = snakeEnemy[0].initialY + snakeEnemy[0].time * SNAKE_ENEMY_SPEED * 60;
-
-        // Move the head
-        snakeEnemy[0].x = headX;
-        snakeEnemy[0].y = headY;
-
-        // Move the tail segments
-        for (let i = snakeEnemy.length - 1; i > 0; i--) {
-            snakeEnemy[i].x = snakeEnemy[i - 1].x;
-            snakeEnemy[i].y = snakeEnemy[i - 1].y - SNAKE_ENEMY_SIZE;
-        }
-
-        // Remove snake enemy if it goes off screen
-        if (snakeEnemy[0].y > GAME_HEIGHT) {
-            snakeEnemy = null;
-        }
-    }
+    // Snake enemy removed
 }
 
 function moveEnemyBullets() {
@@ -484,57 +420,9 @@ function checkCollisions() {
         }
     });
 
-    // Check collision with snake enemy
-    if (snakeEnemy) {
-        bullets.forEach((bullet, bulletIndex) => {
-            snakeEnemy.forEach((segment, segmentIndex) => {
-                if (
-                    bullet.x < segment.x + segment.width &&
-                    bullet.x + bullet.width > segment.x &&
-                    bullet.y < segment.y + segment.height &&
-                    bullet.y + bullet.height > segment.y
-                ) {
-                    bullets.splice(bulletIndex, 1);
-                    explosionSound.currentTime = 0;
-                    explosionSound.play();
-                    segment.health--;
+    // Snake enemy removed
 
-                    // Create an explosion for the hit segment
-                    createExplosion(segment.x + segment.width / 2, segment.y + segment.height / 2, segment.width / 2, segment.color);
-
-                    if (segment.health <= 0) {
-                        if (segmentIndex === 0) {
-                            // If the head is destroyed, remove the whole snake
-                            score += 50 * snakeEnemy.length; // Bonus points for destroying snake enemy
-                            snakeEnemy = null;
-                        } else {
-                            // Remove the destroyed segment
-                            snakeEnemy.splice(segmentIndex, 1);
-                            score += 10; // Points for destroying a segment
-                        }
-                        updateScoreDisplay();
-                    }
-                }
-            });
-        });
-
-        // Check if snake enemy collides with player
-        snakeEnemy.forEach(segment => {
-            if (
-                ship.x < segment.x + segment.width &&
-                ship.x + ship.width > segment.x &&
-                ship.y < segment.y + segment.height &&
-                ship.y + ship.height > segment.y
-            ) {
-                gameOver = true;
-            }
-        });
-    }
-
-    // Check if it's time to spawn the snake enemy
-    if (score === SNAKE_ENEMY_THRESHOLD && !snakeEnemy) {
-        createSnakeEnemy();
-    }
+    // Snake enemy removed
 }
 
 function updatePlayer() {
@@ -657,7 +545,7 @@ function restartGame() {
     createStars(); // Reset stars
     bigEnemies = [];
     enemyBullets = [];
-    snakeEnemy = null;
+    // Snake enemy removed
     gameOverTime = 0;
     shipVisible = true;
     highScorePromptShown = false; // Reset the flag
@@ -699,7 +587,7 @@ function gameLoop() {
 
         // Draw blinking ship
         if (shipVisible) {
-            drawPlayer();
+            ship.draw(ctx);
         }
 
         // Draw name input if needed
@@ -758,7 +646,7 @@ function gameLoop() {
     }
 
     updatePlayer();
-    drawPlayer();
+    ship.draw(ctx);
     drawBullets();
     drawEnemies();
     moveBullets();
@@ -871,59 +759,12 @@ gameLoop();
 window.restartGame = restartGame;
 window.togglePause = togglePause;
 
-// Add this function to create a big enemy pixel map
-function createBigEnemyPixelMap() {
-    // Create a larger, more complex pixel map for the big enemy
-    // This is a simple example, you can make it more detailed
-    return [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-        [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-        [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
-    ];
-}
+// Big enemy pixel map is now imported from invaders/big.js
 
 // Add this to the end of the file
 leaderboard.updateDisplay();
 
-// Add this function to create the snake enemy pixel map
-function createSnakeEnemyPixelMap() {
-    return [
-        [0, 0, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 0, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 1, 1, 1, 1, 0, 1],
-        [1, 0, 1, 0, 0, 1, 0, 1],
-        [0, 1, 0, 1, 1, 0, 1, 0],
-        [0, 0, 1, 0, 0, 1, 0, 0]
-    ];
-}
-
-// Add this function to create the snake enemy
-function createSnakeEnemy() {
-    snakeEnemy = [];
-    for (let i = 0; i < SNAKE_ENEMY_LENGTH; i++) {
-        snakeEnemy.push({
-            x: GAME_WIDTH / 2,
-            y: -SNAKE_ENEMY_SIZE - i * SNAKE_ENEMY_SIZE,
-            width: SNAKE_ENEMY_SIZE,
-            height: SNAKE_ENEMY_SIZE,
-            health: i === 0 ? SNAKE_ENEMY_HEALTH : 1, // Only the head has full health
-            color: i === 0 ? '#00FF00' : '#00CC00', // Slightly darker green for the tail
-            pixelMap: createSnakeEnemyPixelMap(),
-            initialY: -SNAKE_ENEMY_SIZE - i * SNAKE_ENEMY_SIZE,
-            time: 0
-        });
-    }
-}
+// Snake enemy removed
 
 // Add this event listener at the end of the file
 canvas.addEventListener('click', handleCanvasClick);
