@@ -21,7 +21,6 @@ const GAME_HEIGHT = 600;
 canvas.width = GAME_WIDTH;
 canvas.height = GAME_HEIGHT;
 
-const laserSound = document.getElementById('laserSound');
 const explosionSound = document.getElementById('explosionSound');
 
 // Create instances of the new components
@@ -39,6 +38,8 @@ let animationId;
 let lastSpeedIncreaseTime = 0;
 
 let score = 0;
+let enemyKills = 0; // Track enemy kills separately from score
+const BOSS_FIGHT_THRESHOLD = 50; // Kill 50 enemies to trigger boss
 
 const STAR_COUNT = 100;
 let stars = [];
@@ -46,6 +47,11 @@ let stars = [];
 // Modify these constants
 const FIRST_BIG_ENEMY_THRESHOLD = 50;
 const SECOND_BIG_ENEMY_THRESHOLD = 100;
+
+// Boss fight state
+let isBossFight = false;
+let stageCleared = false;
+let showStageClearMessage = false;
 
 // Change bigEnemy to an array
 let bigEnemies = [];
@@ -55,6 +61,8 @@ const BIG_ENEMY_SIZE = 100;
 const BIG_ENEMY_SHOOT_INTERVAL = 2000; // 2 seconds
 
 let enemyBullets = [];
+// Track how many regular enemies have been spawned pre-boss
+let totalEnemiesSpawned = 0;
 
 // Snake enemy removed
 
@@ -95,17 +103,20 @@ function createEnemy(isBig = false, count = 1) {
             } while (overlapping);
 
             bigEnemies.push({
-                x: xPosition,
-                y: -BIG_ENEMY_SIZE,
+                x: isBossFight ? (GAME_WIDTH / 2 - BIG_ENEMY_SIZE / 2) : xPosition,
+                y: isBossFight ? 30 : -BIG_ENEMY_SIZE,
                 width: BIG_ENEMY_SIZE,
                 height: BIG_ENEMY_SIZE,
-                health: BIG_ENEMY_HEALTH,
+                health: isBossFight ? 50 : BIG_ENEMY_HEALTH,
                 color: '#FF00FF', // Magenta color for final boss one
                 pixelMap: FINAL_BOSS_ONE_FRAMES[0],
                 isAnimated: true,
                 currentFrame: 0,
                 lastFrameUpdate: Date.now(),
-                lastShootTime: Date.now()
+                lastShootTime: Date.now(),
+                // Boss-only movement properties
+                isBoss: isBossFight,
+                vx: isBossFight ? 2 : 0
             });
         }
     } else {
@@ -134,6 +145,11 @@ function createEnemy(isBig = false, count = 1) {
             }
         } while (overlapping);
 
+        // Enforce pre-boss spawn cap
+        if (totalEnemiesSpawned >= BOSS_FIGHT_THRESHOLD) {
+            return;
+        }
+
         const invader = PixelInvaderFactory.create();
 
         enemies.push({
@@ -147,6 +163,7 @@ function createEnemy(isBig = false, count = 1) {
             currentFrame: 0,
             lastFrameUpdate: Date.now()
         });
+        totalEnemiesSpawned++;
     }
 }
 
@@ -289,10 +306,25 @@ function moveEnemies() {
     enemies = enemies.filter(enemy => enemy.y < GAME_HEIGHT);
 
     bigEnemies.forEach(bigEnemy => {
-        bigEnemy.y += ENEMY_SPEED * 0.5; // Move slower than regular enemies
+        if (bigEnemy.isBoss) {
+            // Boss moves horizontally at the top, bouncing off walls
+            bigEnemy.x += bigEnemy.vx;
+            if (bigEnemy.x <= 0) {
+                bigEnemy.x = 0;
+                bigEnemy.vx = Math.abs(bigEnemy.vx);
+            } else if (bigEnemy.x + bigEnemy.width >= GAME_WIDTH) {
+                bigEnemy.x = GAME_WIDTH - bigEnemy.width;
+                bigEnemy.vx = -Math.abs(bigEnemy.vx);
+            }
+            // Keep boss near the top
+            bigEnemy.y = 30;
+        } else {
+            // Default behavior for other big enemies
+            bigEnemy.y += ENEMY_SPEED * 0.5; // Move slower than regular enemies
 
-        if (bigEnemy.y + bigEnemy.height >= ship.y) {
-            gameOver = true;
+            if (bigEnemy.y + bigEnemy.height >= ship.y) {
+                gameOver = true;
+            }
         }
 
         // Big enemy shooting
@@ -369,13 +401,21 @@ function checkCollisions() {
                 explosionSound.currentTime = 0;
                 explosionSound.play();
                 score++;
+                enemyKills++;
                 updateScoreDisplay();
 
-                // Check if it's time to spawn the big enemies
-                if (score === FIRST_BIG_ENEMY_THRESHOLD) {
-                    createEnemy(true, 1);
-                } else if (score === SECOND_BIG_ENEMY_THRESHOLD) {
-                    createEnemy(true, 2);
+                // On the 50th kill, start boss music and schedule boss spawn after 5s
+                if (!isBossFight && enemyKills === BOSS_FIGHT_THRESHOLD) {
+                    startBossSequence();
+                }
+
+                // Check if it's time to spawn the big enemies (only if not in boss fight)
+                if (!isBossFight && enemyKills < BOSS_FIGHT_THRESHOLD) {
+                    if (score === FIRST_BIG_ENEMY_THRESHOLD) {
+                        createEnemy(true, 1);
+                    } else if (score === SECOND_BIG_ENEMY_THRESHOLD) {
+                        createEnemy(true, 2);
+                    }
                 }
             }
         });
@@ -402,6 +442,29 @@ function checkCollisions() {
                     bigEnemies.splice(index, 1);
                     score += 20; // Bonus points for destroying big enemy
                     updateScoreDisplay();
+                    
+                    // If this is the boss in boss fight, play death sound and then show stage clear after 3s
+                    if (isBossFight && bigEnemies.length === 0) {
+                        // Stop boss music and ensure background is stopped
+                        if (isBossMusicPlaying) {
+                            bossMusic.pause();
+                            isBossMusicPlaying = false;
+                        }
+                        backgroundMusic.pause();
+                        backgroundMusic.currentTime = 0;
+                        isMusicPlaying = false;
+
+                        // Play boss death sound
+                        if (bossDeathSound) {
+                            bossDeathSound.currentTime = 0;
+                            bossDeathSound.play().catch(() => {});
+                        }
+
+                        // Delay stage clear screen by 3 seconds
+                        setTimeout(() => {
+                            showStageClearScreen();
+                        }, 3000);
+                    }
                 }
             }
         });
@@ -477,7 +540,10 @@ let mouseY = 0;
 
 // Near the top of the file, update these lines
 const backgroundMusic = document.getElementById('backgroundMusic');
+const bossMusic = document.getElementById('bossMusic');
+const bossDeathSound = document.getElementById('bossDeathSound');
 let isMusicPlaying = false;
+let isBossMusicPlaying = false;
 
 // Update the startBackgroundMusic function
 function startBackgroundMusic() {
@@ -502,6 +568,96 @@ function handleUserInteraction() {
     }
 }
 
+// Function to start boss fight
+function startBossFight() {
+    isBossFight = true;
+    // Stop background music completely and start boss music
+    if (isMusicPlaying) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0; // Reset to beginning
+        isMusicPlaying = false;
+    }
+    // Ensure background music is stopped even if isMusicPlaying was false
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    
+    bossMusic.volume = 0.5;
+    bossMusic.loop = true;
+    bossMusic.currentTime = 0; // Start from beginning
+    bossMusic.play()
+        .then(() => {
+            isBossMusicPlaying = true;
+        })
+        .catch(error => {
+            console.error('Error playing boss music:', error);
+        });
+    
+    // Clear all regular enemies
+    enemies = [];
+    // Spawn final boss
+    createEnemy(true, 1);
+}
+
+// Start boss sequence: music immediately, boss appears after 5 seconds
+function startBossSequence() {
+    // Stop background music and start boss music now
+    if (isMusicPlaying) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        isMusicPlaying = false;
+    }
+    if (!isBossMusicPlaying) {
+        bossMusic.currentTime = 0;
+        bossMusic.volume = 0.5;
+        bossMusic.loop = true;
+        bossMusic.play()
+            .then(() => { isBossMusicPlaying = true; })
+            .catch(err => console.error('Error playing boss music:', err));
+    }
+    // Delay boss spawn by 5 seconds
+    setTimeout(() => {
+        startBossFight();
+    }, 5000);
+}
+
+// Function to show stage clear screen
+function showStageClearScreen() {
+    showStageClearMessage = true;
+    isBossFight = false;
+    stageCleared = true;
+    // Stop boss music
+    if (isBossMusicPlaying) {
+        bossMusic.pause();
+        isBossMusicPlaying = false;
+    }
+    // Render the stage clear screen once
+    gameLoop();
+}
+
+// Function to continue after stage clear
+function continueStage() {
+    showStageClearMessage = false;
+    stageCleared = false;
+    // Reset enemy speed progression to initial values
+    ENEMY_SPEED = 0.2;
+    lastSpeedIncreaseTime = Date.now();
+    // Reset ship speed and velocity to normal
+    ship.speed = 5; // Reset ship speed to initial value
+    ship.velocity = 0; // Stop any movement
+    // Reset spawn cap and kill counter so invaders spawn again
+    totalEnemiesSpawned = 0;
+    enemyKills = 0;
+    // Resume background music
+    if (!isMusicPlaying) {
+        startBackgroundMusic();
+    } else {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play();
+    }
+    // Game continues normally
+    gameLoop();
+}
+
 // Modify the togglePause function
 function togglePause() {
     isPaused = !isPaused;
@@ -513,12 +669,18 @@ function togglePause() {
         playIcon.style.display = 'block';
         cancelAnimationFrame(animationId);
         backgroundMusic.pause(); // Pause the background music
+        if (isBossMusicPlaying) {
+            bossMusic.pause(); // Pause boss music if playing
+        }
     } else {
         pauseIcon.style.display = 'block';
         playIcon.style.display = 'none';
         gameLoop();
         if (isMusicPlaying) {
             backgroundMusic.play(); // Resume the background music
+        }
+        if (isBossMusicPlaying) {
+            bossMusic.play(); // Resume boss music if was playing
         }
     }
 }
@@ -528,6 +690,7 @@ function restartGame() {
     cancelAnimationFrame(animationId);
     clearInterval(shipBlinkInterval);
     ship.x = GAME_WIDTH / 2;
+    ship.speed = 5; // Reset ship speed to initial value
     ship.velocity = 0;
     bulletManager.clearBullets();
     enemies = [];
@@ -551,6 +714,15 @@ function restartGame() {
     highScorePromptShown = false; // Reset the flag
     showNameInput = false;
     playerNameInput = '';
+    totalEnemiesSpawned = 0;
+    enemyKills = 0;
+    isBossFight = false;
+    stageCleared = false;
+    showStageClearMessage = false;
+    if (isBossMusicPlaying) {
+        bossMusic.pause();
+        isBossMusicPlaying = false;
+    }
     gameLoop();
 
     if (!isMusicPlaying) {
@@ -570,6 +742,47 @@ function gameLoop() {
     // Draw and move stars
     drawStars();
     moveStars();
+
+    // Draw stage clear message if needed
+    if (showStageClearMessage) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = 'black';
+        ctx.font = '60px "Pixelify Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 5;
+        ctx.strokeText('Stage one cleared', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
+        ctx.fillText('Stage one cleared', GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50);
+
+        // Draw "Continue" button
+        ctx.font = '30px "Pixelify Sans", sans-serif';
+        const continueText = 'Continue';
+        ctx.strokeText(continueText, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80);
+        ctx.fillText(continueText, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80);
+
+        // Change cursor style when hovering over Continue button
+        const textWidth = ctx.measureText(continueText).width;
+        const textHeight = 30;
+        const textX = GAME_WIDTH / 2 - textWidth / 2;
+        const textY = GAME_HEIGHT / 2 + 80 - textHeight / 2;
+
+        if (
+            mouseX >= textX &&
+            mouseX <= textX + textWidth &&
+            mouseY >= textY &&
+            mouseY <= textY + textHeight
+        ) {
+            canvas.style.cursor = 'pointer';
+        } else {
+            canvas.style.cursor = 'default';
+        }
+
+        // Do not schedule another frame here to avoid duplicate loops
+        return;
+    }
 
     if (gameOver) {
         if (gameOverTime === 0) {
@@ -661,8 +874,8 @@ function gameLoop() {
         ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
     });
 
-    // Create new enemy every second (if less than 5 enemies are present)
-    if (enemies.length < 5 && Math.random() < 0.02) {
+    // Create new enemy every second (if less than 5 enemies are present, not in boss fight, and under cap)
+    if (!isBossFight && !showStageClearMessage && totalEnemiesSpawned < BOSS_FIGHT_THRESHOLD && enemies.length < 5 && Math.random() < 0.02) {
         createEnemy();
     }
 
@@ -724,11 +937,29 @@ function handleNameInput(event) {
 
 // Modify the handleCanvasClick function
 function handleCanvasClick(event) {
-    if (gameOver) {
-        const rect = canvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
 
+    // Check if clicking on Continue button during stage clear
+    if (showStageClearMessage) {
+        const textX = GAME_WIDTH / 2;
+        const textY = GAME_HEIGHT / 2 + 80;
+        const textWidth = ctx.measureText('Continue').width;
+        const textHeight = 30;
+
+        if (
+            clickX >= textX - textWidth / 2 &&
+            clickX <= textX + textWidth / 2 &&
+            clickY >= textY - textHeight / 2 &&
+            clickY <= textY + textHeight / 2
+        ) {
+            continueStage();
+        }
+        return;
+    }
+
+    if (gameOver) {
         // Check if the click is on the "Play Again" text
         const textX = GAME_WIDTH / 2;
         const textY = GAME_HEIGHT / 2 + 80;
