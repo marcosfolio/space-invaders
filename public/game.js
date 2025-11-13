@@ -102,21 +102,30 @@ function createEnemy(isBig = false, count = 1) {
                 }
             } while (overlapping);
 
+            const bossBaseColor = '#FF00FF';
+            const bossFlashColor = '#FF66FF';
+            const isBossEnemy = isBossFight;
+            const baseColor = bossBaseColor;
+            const flashColor = isBossEnemy ? bossFlashColor : bossBaseColor;
+
             bigEnemies.push({
-                x: isBossFight ? (GAME_WIDTH / 2 - BIG_ENEMY_SIZE / 2) : xPosition,
-                y: isBossFight ? 30 : -BIG_ENEMY_SIZE,
+                x: isBossEnemy ? (GAME_WIDTH / 2 - BIG_ENEMY_SIZE / 2) : xPosition,
+                y: isBossEnemy ? 30 : -BIG_ENEMY_SIZE,
                 width: BIG_ENEMY_SIZE,
                 height: BIG_ENEMY_SIZE,
-                health: isBossFight ? 50 : BIG_ENEMY_HEALTH,
-                color: '#FF00FF', // Magenta color for final boss one
+                health: isBossEnemy ? 50 : BIG_ENEMY_HEALTH,
+                color: baseColor,
+                baseColor,
+                flashColor,
+                hitFlashUntil: 0,
                 pixelMap: FINAL_BOSS_ONE_FRAMES[0],
                 isAnimated: true,
                 currentFrame: 0,
                 lastFrameUpdate: Date.now(),
                 lastShootTime: Date.now(),
                 // Boss-only movement properties
-                isBoss: isBossFight,
-                vx: isBossFight ? 2 : 0
+                isBoss: isBossEnemy,
+                vx: isBossEnemy ? 2 : 0
             });
         }
     } else {
@@ -271,6 +280,12 @@ function drawEnemies() {
             }
         }
 
+        // Reset flash color once timer expires
+        if (bigEnemy.hitFlashUntil && Date.now() > bigEnemy.hitFlashUntil) {
+            bigEnemy.color = bigEnemy.baseColor;
+            bigEnemy.hitFlashUntil = 0;
+        }
+
         bigEnemy.pixelMap.forEach((row, i) => {
             row.forEach((pixel, j) => {
                 if (pixel) {
@@ -329,18 +344,32 @@ function moveEnemies() {
 
         // Big enemy shooting
         if (Date.now() - bigEnemy.lastShootTime > BIG_ENEMY_SHOOT_INTERVAL) {
-            enemyBullets.push({
-                x: bigEnemy.x + bigEnemy.width / 2,
-                y: bigEnemy.y + bigEnemy.height,
-                width: 4,
-                height: 10,
-                color: 'red'
-            });
+            if (bigEnemy.isBoss) {
+                if (bossFartSound) {
+                    bossFartSound.currentTime = 0;
+                    bossFartSound.play().catch(() => {});
+                }
+                enemyBullets.push({
+                    x: bigEnemy.x + bigEnemy.width / 2 - 5,
+                    y: bigEnemy.y + bigEnemy.height,
+                    width: 10,
+                    height: 12,
+                    color: '#8B4513',
+                    secondaryColor: '#A0522D',
+                    isBossBullet: true
+                });
+            } else {
+                enemyBullets.push({
+                    x: bigEnemy.x + bigEnemy.width / 2,
+                    y: bigEnemy.y + bigEnemy.height,
+                    width: 4,
+                    height: 10,
+                    color: 'red'
+                });
+            }
             bigEnemy.lastShootTime = Date.now();
         }
     });
-
-    // Snake enemy removed
 }
 
 function moveEnemyBullets() {
@@ -432,6 +461,10 @@ function checkCollisions() {
                 explosionSound.currentTime = 0;
                 explosionSound.play();
                 bigEnemy.health--;
+                if (bigEnemy.isBoss) {
+                    bigEnemy.color = bigEnemy.flashColor;
+                    bigEnemy.hitFlashUntil = Date.now() + 100; // flash for 100ms
+                }
 
                 // Create a small explosion for each hit
                 createExplosion(bullet.x, bullet.y, 10, bigEnemy.color);
@@ -482,10 +515,6 @@ function checkCollisions() {
             enemyBullets.splice(index, 1);
         }
     });
-
-    // Snake enemy removed
-
-    // Snake enemy removed
 }
 
 function updatePlayer() {
@@ -542,6 +571,7 @@ let mouseY = 0;
 const backgroundMusic = document.getElementById('backgroundMusic');
 const bossMusic = document.getElementById('bossMusic');
 const bossDeathSound = document.getElementById('bossDeathSound');
+const bossFartSound = document.getElementById('bossFartSound');
 let isMusicPlaying = false;
 let isBossMusicPlaying = false;
 
@@ -571,26 +601,29 @@ function handleUserInteraction() {
 // Function to start boss fight
 function startBossFight() {
     isBossFight = true;
-    // Stop background music completely and start boss music
+    // Stop background music completely (boss music should already be playing from startBossSequence)
     if (isMusicPlaying) {
         backgroundMusic.pause();
-        backgroundMusic.currentTime = 0; // Reset to beginning
+        backgroundMusic.currentTime = 0;
         isMusicPlaying = false;
     }
     // Ensure background music is stopped even if isMusicPlaying was false
     backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
     
-    bossMusic.volume = 0.5;
-    bossMusic.loop = true;
-    bossMusic.currentTime = 0; // Start from beginning
-    bossMusic.play()
-        .then(() => {
-            isBossMusicPlaying = true;
-        })
-        .catch(error => {
-            console.error('Error playing boss music:', error);
-        });
+    // Only start boss music if it's not already playing
+    if (!isBossMusicPlaying) {
+        bossMusic.volume = 0.5;
+        bossMusic.loop = true;
+        bossMusic.currentTime = 0;
+        bossMusic.play()
+            .then(() => {
+                isBossMusicPlaying = true;
+            })
+            .catch(error => {
+                console.error('Error playing boss music:', error);
+            });
+    }
     
     // Clear all regular enemies
     enemies = [];
@@ -869,9 +902,36 @@ function gameLoop() {
     increaseEnemySpeed();
 
     // Draw enemy bullets
-    ctx.fillStyle = 'red';
     enemyBullets.forEach(bullet => {
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        if (bullet.isBossBullet) {
+            const segmentHeight = Math.max(2, Math.floor(bullet.height / 3));
+            // Top swirl
+            ctx.fillStyle = bullet.secondaryColor || bullet.color;
+            ctx.fillRect(
+                bullet.x + Math.floor(bullet.width * 0.3),
+                bullet.y,
+                Math.floor(bullet.width * 0.4),
+                segmentHeight
+            );
+            // Middle wider section
+            ctx.fillStyle = bullet.color;
+            ctx.fillRect(
+                bullet.x + Math.floor(bullet.width * 0.1),
+                bullet.y + segmentHeight,
+                Math.floor(bullet.width * 0.8),
+                segmentHeight
+            );
+            // Base
+            ctx.fillRect(
+                bullet.x,
+                bullet.y + segmentHeight * 2,
+                bullet.width,
+                segmentHeight
+            );
+        } else {
+            ctx.fillStyle = bullet.color || 'red';
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        }
     });
 
     // Create new enemy every second (if less than 5 enemies are present, not in boss fight, and under cap)
@@ -994,8 +1054,6 @@ window.togglePause = togglePause;
 
 // Add this to the end of the file
 leaderboard.updateDisplay();
-
-// Snake enemy removed
 
 // Add this event listener at the end of the file
 canvas.addEventListener('click', handleCanvasClick);
